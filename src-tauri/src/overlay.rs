@@ -47,6 +47,10 @@ pub fn show(app: &AppHandle) {
     if let Err(e) = window.show() {
         log::warn!("could not show the overlay: {e}");
     }
+    // Showing an already-created window does not restore its place in the native
+    // stacking order. In particular, Windows can demote a hidden overlay while
+    // displays or other topmost windows change.
+    raise_without_focus(&window);
 }
 
 pub fn hide(app: &AppHandle) {
@@ -54,6 +58,53 @@ pub fn hide(app: &AppHandle) {
         if let Err(e) = window.hide() {
             log::warn!("could not hide the overlay: {e}");
         }
+    }
+}
+
+#[cfg(target_os = "windows")]
+fn raise_without_focus(window: &WebviewWindow) {
+    let overlay = window.clone();
+    if let Err(e) = window.run_on_main_thread(move || {
+        use std::ffi::c_void;
+
+        #[link(name = "user32")]
+        extern "system" {
+            fn SetWindowPos(
+                hwnd: *mut c_void,
+                insert_after: *mut c_void,
+                x: i32,
+                y: i32,
+                width: i32,
+                height: i32,
+                flags: u32,
+            ) -> i32;
+        }
+
+        let Ok(hwnd) = overlay.hwnd() else {
+            return;
+        };
+        // Tao caches the always-on-top flag, so setting it to true again can be
+        // a no-op even when the OS stacking order has changed. Reassert HWND_TOPMOST
+        // directly, preserving geometry and the user's focused paste target.
+        const HWND_TOPMOST: *mut c_void = -1isize as *mut c_void;
+        // SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE.
+        const FLAGS: u32 = 0x0001 | 0x0002 | 0x0010;
+        // SAFETY: the live Tauri window supplies the HWND; this runs on its UI thread.
+        if unsafe { SetWindowPos(hwnd.0, HWND_TOPMOST, 0, 0, 0, 0, FLAGS) } == 0 {
+            log::warn!(
+                "could not raise the overlay: {}",
+                std::io::Error::last_os_error()
+            );
+        }
+    }) {
+        log::warn!("could not schedule overlay stacking repair: {e}");
+    }
+}
+
+#[cfg(not(target_os = "windows"))]
+fn raise_without_focus(window: &WebviewWindow) {
+    if let Err(e) = window.set_always_on_top(true) {
+        log::warn!("could not raise the overlay: {e}");
     }
 }
 

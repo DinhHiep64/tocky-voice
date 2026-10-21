@@ -74,7 +74,7 @@ async fn check(mode: &Mode, llm: &LlmSettings) -> Option<String> {
     let started = std::time::Instant::now();
     let result = refine::refine(RefineRequest {
         system_prompt: mode.prompt.clone(),
-        transcript: TRANSCRIPT.into(),
+        transcript: refine::frame_transcript(TRANSCRIPT),
         llm: llm.clone(),
         api_key: std::env::var("FVT_LLM_KEY").ok(),
     })

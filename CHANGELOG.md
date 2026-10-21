@@ -9,6 +9,31 @@ notes are read by users, not by the people who wrote the code. English goes in a
 `### English` subsection at the end of the same release, as the secondary version.
 Entries before 0.4.0 predate this and are English only.
 
+## [Unreleased]
+
+### Sửa lỗi
+
+- **Windows: popup ghi âm bị cửa sổ khác che sau một thời gian sử dụng.** Mỗi lần
+  hiện, popup được đưa lại lên trên cùng mà không lấy focus của ứng dụng đang nhập
+  liệu. Kích thước và vị trí vẫn theo màn hình chứa con trỏ chuột.
+- **Câu ngắn như "OK", "Đồng ý" bị dán thành "Vui lòng cung cấp đoạn văn bản cần
+  hiệu đính".** Lời đọc giờ được gửi cho AI dưới dạng văn bản cần xử lý, không phải
+  tin nhắn gửi cho nó, nên câu ngắn, câu hỏi hay câu ra lệnh đều được giữ nguyên ý.
+  Áp dụng cho mọi chế độ có AI, kể cả chế độ tự tạo.
+
+### English
+
+### Fixed
+
+- **Windows: the recording overlay could stay behind other windows after extended
+  use.** Restore its native topmost position on every show without activating it
+  or changing the focused paste target. Pointer-monitor placement and DPI sizing
+  are preserved.
+- **Short takes like "OK" or "Đồng ý" were pasted as "please provide the text to
+  proofread".** The transcript is now sent to the AI as material to rewrite rather
+  than as a message to it, so short phrases, questions and commands keep their
+  meaning. Applies to every AI mode, custom ones included.
+
 ## [0.5.1] - 2026-09-09
 
 ### Sửa lỗi

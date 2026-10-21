@@ -217,7 +217,7 @@ async fn refine_or_fall_back(
 
     let request = RefineRequest {
         system_prompt: mode.prompt.clone(),
-        transcript: transcript.to_string(),
+        transcript: refine::frame_transcript(transcript),
         llm,
         api_key,
     };
