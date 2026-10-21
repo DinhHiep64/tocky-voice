@@ -37,6 +37,7 @@ pub fn save_settings(
     }
 
     settings::save(&app, &settings).map_err(to_err)?;
+    crate::proxy::configure(&settings.proxy);
     apply_autostart(&app, settings.autostart);
     *state.settings.lock().expect("settings lock") = settings.clone();
     hotkeys::apply(&app, &settings);
@@ -49,6 +50,7 @@ pub fn save_settings(
 pub fn reset_settings(app: AppHandle, state: tauri::State<AppState>) -> Result<AppSettings, String> {
     let fresh = defaults::default_settings();
     settings::save(&app, &fresh).map_err(to_err)?;
+    crate::proxy::configure(&fresh.proxy);
     *state.settings.lock().expect("settings lock") = fresh.clone();
     hotkeys::apply(&app, &fresh);
     let _ = app.emit(events::SETTINGS_CHANGED, ());
@@ -206,6 +208,15 @@ pub fn permission_status() -> PermissionStatus {
     }
 }
 
+/// Whether the updater may replace this app in place, or has to send the user to the
+/// download page instead. See [`crate::code_signature`] for why macOS gets a say.
+/// `async` on purpose: this shells out to `codesign`, and a synchronous command runs on
+/// the main thread, where that spawn would stall the window it is being asked from.
+#[tauri::command]
+pub async fn can_self_install() -> bool {
+    crate::code_signature::can_self_install()
+}
+
 /// Opens an external link in the default browser — provider signup pages, the author's
 /// site. Restricted to https so a compromised webview cannot hand the OS a `file://`
 /// or a custom scheme to launch.
@@ -288,6 +299,58 @@ pub fn suspend_hotkeys(app: AppHandle) {
 pub fn resume_hotkeys(app: AppHandle, state: tauri::State<AppState>) {
     let settings = state.settings.lock().expect("settings lock").clone();
     hotkeys::apply(&app, &settings);
+}
+
+/// How the shortcuts on this desktop actually reach the app.
+///
+/// The settings screen needs this because the honest answer differs per session: a
+/// Wayland desktop never delivers a key the app grabbed for itself, so on GNOME the
+/// shortcuts are installed into the desktop instead, and on any other Wayland
+/// compositor the user has to bind them by hand — with the command lines this returns.
+#[tauri::command]
+pub fn hotkey_delivery(state: tauri::State<AppState>) -> hotkeys::Delivery {
+    let settings = state.settings.lock().expect("settings lock").clone();
+    hotkeys::delivery(&settings)
+}
+
+/// Whether one combination is usable on this machine, and what holds it if not.
+///
+/// Called as soon as the recorder captures a key, because the moment to say "GNOME
+/// already uses that one" is before the shortcut is saved — afterwards the only symptom
+/// is a key that does nothing, which is indistinguishable from the app being broken.
+/// `current` is the key the field being edited holds right now, if any: without it,
+/// re-recording a shortcut as the value it already has reports a clash with itself.
+#[tauri::command]
+pub fn hotkey_check(
+    accelerator: String,
+    current: Option<String>,
+    state: tauri::State<AppState>,
+) -> hotkeys::HotkeyCheck {
+    let settings = state.settings.lock().expect("settings lock").clone();
+    hotkeys::check_for_field(&settings, &accelerator, current.as_deref())
+}
+
+/// Combinations that are free on this machine right now, for the user who cannot think
+/// of one that is not already taken.
+#[tauri::command]
+pub fn hotkey_suggestions(state: tauri::State<AppState>) -> Vec<String> {
+    let settings = state.settings.lock().expect("settings lock").clone();
+    hotkeys::suggestions(&settings, None, 5)
+}
+
+/// Starts and stops "press your shortcut and see whether it arrives" mode.
+///
+/// While it is on, a hotkey emits [`events::HOTKEY_FIRED`] and runs nothing — testing a
+/// dictation shortcut otherwise means starting a recording, which is why the honest
+/// answer to "is my hotkey working?" used to be "try it and find out".
+#[tauri::command]
+pub fn start_hotkey_probe() {
+    hotkeys::set_probe(true);
+}
+
+#[tauri::command]
+pub fn stop_hotkey_probe() {
+    hotkeys::set_probe(false);
 }
 
 /// Fetches the provider's current model list. Falls back to the preset's built-in list
