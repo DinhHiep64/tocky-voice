@@ -34,6 +34,60 @@ Entries before 0.4.0 predate this and are English only.
   than as a message to it, so short phrases, questions and commands keep their
   meaning. Applies to every AI mode, custom ones included.
 
+## [0.5.6] - 2026-11-17
+
+### Mới
+
+- **Chọn được model nhận dạng giọng nói, và model mới tự hiện ra.** Trong Cài đặt → Nhà
+  cung cấp, phần Giọng nói giờ có ô **Model**. Danh sách được lấy trực tiếp từ Soniox
+  hoặc Deepgram mỗi khi bạn mở, nên hãng ra model mới là bạn chọn được ngay, không phải
+  chờ app cập nhật. Chưa có key hoặc mất mạng thì app dùng danh sách có sẵn.
+- **Dùng được Soniox v6 (`stt-rt-v6`), chính xác hơn bản trước.** Soniox v6 ra ngày
+  3/11/2026: nhận dạng chính xác hơn trên các ngôn ngữ, hiểu ngữ cảnh tốt hơn và nhận
+  đa ngôn ngữ mạnh hơn, hợp với câu nói pha tiếng Việt lẫn tiếng Anh. Số tiền và mã số
+  cũng được viết sát cách đọc hơn. Giá vẫn như cũ. Bản này mặc định dùng v6, và ai đang
+  dùng `stt-rt-preview` (tên cũ không còn trong danh sách của Soniox) được chuyển sang v6
+  một lần. Model bạn đã tự chọn thì giữ nguyên. Soniox sẽ ngừng v5 vào 15/12/2026.
+
+### Bảo mật
+
+- Cập nhật các thư viện mã hoá kết nối (`rustls`, `quinn`, chứng chỉ gốc) lên bản vá,
+  gồm lỗi chấp nhận chứng chỉ trung gian đã bị thu hồi.
+
+### English
+
+- **Pick the speech model, and new models show up on their own.** Settings → Providers →
+  Speech now has a **Model** picker fed live from Soniox or Deepgram, so a model released
+  today is selectable today without an app update. With no key or offline it falls back to
+  a built-in list.
+- **Soniox v6 (`stt-rt-v6`) is available and is the new default.** It is more accurate
+  across languages, uses context better and handles mixed-language speech more strongly,
+  which suits Vietnamese with English mixed in; prices and codes are written closer to how
+  they are spoken. Same price. Anyone still on the retired `stt-rt-preview` is moved to v6
+  once; a model you chose yourself is kept. Soniox retires v5 on 15 Dec 2026.
+- **Security:** TLS and QUIC dependencies updated to patched releases, including a fix for
+  certificate verification accepting distrusted intermediates.
+
+## [0.5.5] - 2026-11-10
+
+### Sửa
+
+- **App không còn ngốn bộ nhớ ngày càng nhiều khi để chạy lâu.** Đóng cửa sổ Cài đặt thì
+  nó chỉ ẩn xuống thanh menu, nhưng vẫn vẽ lại sóng âm và chữ mỗi lần bạn nói. macOS
+  không giải phóng bộ nhớ của những lần vẽ cho cửa sổ đang ẩn, nên app cứ phình dần: để
+  chạy liên tục hai ngày là lên tới 3,6 GB, phải tắt hẳn app mới trả lại. Giờ cửa sổ ẩn
+  không vẽ gì nữa, mở lên là cập nhật ngay một lần. Đo thử 200 lượt nói: trước khi sửa
+  tăng từ 325 MB lên 930 MB và chưa dừng, sau khi sửa đứng yên khoảng 55 MB.
+
+### English
+
+- **Memory no longer grows the longer the app runs.** Closing the settings window only
+  hides it to the menu bar, and it kept redrawing the level meter and transcript on every
+  take. WebKit keeps what a hidden page's updates allocate, so the app reached 3.6 GB
+  after two days and only quitting gave it back. Hidden windows now skip those updates
+  and catch up in one render when shown. Measured over 200 simulated takes: 325 MB to
+  930 MB and still climbing before, flat at about 55 MB after.
+
 ## [0.5.4] - 2026-09-30
 
 Bản này gần như dành trọn cho Linux. Phím tắt và thao tác dán trên Wayland trước giờ
